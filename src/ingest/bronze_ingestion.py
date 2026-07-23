@@ -4,7 +4,8 @@
 # Cell 1: Imports
 from pyspark.sql import functions as F
 from datetime import datetime
-import uuid
+
+
 print("Libraries loaded ✅")
 
 # Cell 2: Configuration
@@ -21,19 +22,18 @@ print(f"Total raw rows: {df_raw.count():,}")
 df_raw.show(3)
 
 # Cell 4: Add ingestion metadata
-df_bronze = df_raw \
-    .withColumn("_ingested_at", F.current_timestamp()) \
-    .withColumn("_batch_id", F.lit(BATCH_ID)) \
-    .withColumn("_source", F.lit("nyc_tlc_yellow_taxi")) \
+df_bronze = (
+    df_raw.withColumn("_ingested_at", F.current_timestamp())
+    .withColumn("_batch_id", F.lit(BATCH_ID))
+    .withColumn("_source", F.lit("nyc_tlc_yellow_taxi"))
     .withColumn("_pipeline_version", F.lit("1.0"))
+)
 print("Metadata columns added ✅")
 
 # Cell 5: Write to Bronze as Delta Table (APPEND only)
-df_bronze.write \
-    .format("delta") \
-    .mode("append") \
-    .option("mergeSchema", "true") \
-    .saveAsTable(BRONZE_TABLE_NAME)
+df_bronze.write.format("delta").mode("append").option("mergeSchema", "true").saveAsTable(
+    BRONZE_TABLE_NAME
+)
 final_count = spark.table(BRONZE_TABLE_NAME).count()
 print(f"✅ Bronze ingestion complete!")
 print(f"   Rows written this batch : {df_bronze.count():,}")
